@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clínica PDV - Gestão Master Completa</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.11/locales/pt-br.global.min.js'></script>
+
+    <style>
+        :root {
+            --primary: #2563eb; --secondary: #3b82f6; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b;
+            --bg-color: #f1f5f9; --sidebar-bg: #1e293b; --text-dark: #0f172a; --text-light: #fff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); overflow: hidden; }
+        
+        .menu-btn { display: none; position: fixed; top: 15px; left: 15px; z-index: 100; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; z-index: 90; box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
+        .sidebar h2 { text-align: center; padding: 25px 20px; border-bottom: 1px solid #334155; font-size: 22px; color: #60a5fa; }
+        .sidebar ul { list-style: none; flex: 1; margin-top: 15px; overflow-y: auto; }
+        .sidebar li { padding: 16px 25px; cursor: pointer; border-left: 4px solid transparent; color: #cbd5e1; transition: 0.2s; font-size: 15px; font-weight: 500; }
+        .sidebar li:hover, .sidebar li.active { background-color: #0f172a; border-left-color: var(--primary); color: white; }
+        .sidebar .divider { height: 1px; background: #334155; margin: 15px 0; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; width: 100%; }
+        .section { display: none; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        h1 { font-size: 24px; color: var(--text-dark); margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        h2, h3 { color: var(--text-dark); margin-bottom: 15px; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;}
+        .form-group.full { grid-column: 1 / -1; }
+        .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        
+        .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: white; padding: 20px; border-radius: 12px; border-top: 4px solid var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h3 { color: #64748b; font-size: 13px; text-transform: uppercase; margin-bottom: 5px; }
+        .card p { font-size: 24px; font-weight: bold; color: var(--text-dark); }
+        .card.success { border-top-color: var(--success); } .card.warning { border-top-color: var(--warning); } .card.danger { border-top-color: var(--danger); }
+
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .chart-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; color: #475569; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        button { background-color: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        button:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: var(--success); } .btn-danger { background-color: var(--danger); } .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-small { padding: 6px 10px; font-size: 12px; } .btn-whatsapp { background-color: #25D366; } .btn-whatsapp:hover { background-color: #128C7E; }
+
+        .table-container { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 12px; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; }
+        .bg-pendente { background: #94a3b8; } .bg-success { background: var(--success); } .bg-danger { background: var(--danger); } .bg-warning { background: var(--warning); color: #000;}
+
+        /* Modais */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        .modal-box { background: white; width: 90%; max-width: 700px; padding: 25px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+        
+        .agenda-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        #calendar { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        .portal-paciente { background: #ffffff; max-width: 500px; margin: 20px auto; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 6px solid var(--primary); }
+        .grid-horarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; margin-top: 10px; }
+        .btn-horario { background: #f1f5f9; color: #475569; border: 2px solid #e2e8f0; border-radius: 6px; padding: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; }
+        .btn-horario.selecionado { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .alerta-clinico { background: #fee2e2; border-left: 4px solid var(--danger); padding: 10px; border-radius: 4px; color: #991b1b; font-size: 13px; font-weight: bold; margin-bottom: 15px;}
+
+        @media (max-width: 900px) { .agenda-layout { grid-template-columns: 1fr; } .charts-grid { grid-template-columns: 1fr; } .form-grid-4 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 768px) { .menu-btn { display: block; } .sidebar { position: fixed; height: 100%; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { padding-top: 70px; padding-left: 15px; padding-right: 15px; } .form-grid, .form-grid-4 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <button class="menu-btn" onclick="toggleMenu()">☰ Menu</button>
+
+    <div class="sidebar" id="sidebar">
+        <h2>Clínica PDV</h2>
+        <ul>
+            <li class="active" onclick="showSection('dashboard', this)">📊 Painel Gerencial</li>
+            <li onclick="showSection('agenda', this)">📅 Agenda & Bloqueios</li>
+            <li onclick="showSection('crm', this)">👥 Pacientes (CRM)</li>
+            <li onclick="showSection('financeiro', this)">💰 Controle de Caixa</li>
+            <li onclick="showSection('estoque', this)">📦 Controle de Estoque</li>
+            <div class="divider"></div>
+            <li style="color: #60a5fa;" onclick="showSection('portal', this)">📱 Portal do Paciente</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="dashboard" class="section active">
+            <h1>Dashboard Gerencial</h1>
+            <div class="dashboard-cards">
+                <div class="card success"><h3>Entradas Hoje</h3><p id="dash-hj-entradas">R$ 0,00</p></div>
+                <div class="card warning"><h3>Fila de Espera</h3><p id="dash-fila">0</p></div>
+                <div class="card" style="border-top-color: #8b5cf6;"><h3>Retornos Pendentes</h3><p id="dash-retornos">0</p></div>
+                <div class="card danger"><h3>Estoque Baixo</h3><p id="dash-estoque">0</p></div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-box"><h3>Financeiro (Últimos Dias)</h3><canvas id="graficoFinanceiro"></canvas></div>
+                <div class="chart-box"><h3>Status da Agenda</h3><canvas id="graficoAgenda"></canvas></div>
+            </div>
+        </div>
+
+        <div id="agenda" class="section">
+            <h1>Agenda e Controle de Fila</h1>
+            <div class="agenda-layout">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <h3>Atendimentos Hoje</h3>
+                        <div id="lista-fila" style="margin-top: 15px;"></div>
+                    </div>
+                    
+                    <div style="background: #fef2f2; padding: 20px; border-radius: 12px; border: 1px solid #fca5a5;">
+                        <h3 style="color: var(--danger);">🛑 Bloquear Horários</h3>
+                        <input type="date" id="bloq-data" style="margin-bottom: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="time" id="bloq-hora-ini" value="08:00"> até <input type="time" id="bloq-hora-fim" value="18:00">
+                        </div>
+                        <button class="btn-danger" style="width: 100%; margin-top: 10px;" onclick="bloquearPeriodo()">Bloquear</button>
+                    </div>
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <h3 style="color: var(--danger);">Horários Bloqueados</h3>
+                        <div id="lista-bloqueios" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+                <div id="calendar-container"><div id="calendar"></div></div>
+            </div>
+        </div>
+
+        <div id="crm" class="section">
+            <h1>Gestão de Pacientes (CRM)</h1>
+            <div class="table-container">
+                <table id="tabela-pacientes">
+                    <thead><tr><th>Nome</th><th>Contato</th><th>Última Visita</th><th>Próx. Retorno</th><th>Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="financeiro" class="section">
+            <h1>Controle de Caixa</h1>
+            <div class="form-grid">
+                <div class="form-group full"><h3>Novo Lançamento</h3></div>
+                <div class="form-grid-4 full">
+                    <div class="form-group"><label>Tipo</label><select id="fin-tipo"><option value="Entrada">Entrada</option><option value="Saida">Saída</option></select></div>
+                    <div class="form-group"><label>Forma</label><select id="fin-forma"><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Dinheiro">Dinheiro</option></select></div>
+                    <div class="form-group"><label>Descrição</label><input type="text" id="fin-desc"></div>
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" id="fin-valor" step="0.01"></div>
+                </div>
+                <div class="form-group full"><button style="width: 100%;" onclick="registrarCaixa()">💾 Salvar no Caixa</button></div>
+            </div>
+            <div class="table-container">
+                <table id="tabela-financeiro"><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Forma</th><th>Valor</th><th>Ação</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <div id="estoque" class="section">
+            <h1>Controle de Estoque</h1>
+            <div class="form-grid">
+                <div class="form-group"><label>Insumo</label><input type="text" id="est-nome"></div>
+                <div class="form-group"><label>Medida</label><select id="est-medida"><option>Unidade</option><option>Caixa</option><option>Frasco</option></select></div>
+                <div class="form-group"><label>Qtd. Atual</label><input type="number" id="est-qtd"></div>
+                <div class="form-group"><label>Aviso Mínimo</label><input type="number" id="est-min"></div>
+                <div class="form-group full"><button style="width: 100%;" onclick="adicionarNovoEstoque()">Cadastrar Produto</button></div>
+            </div>
+            <div class="table-container">
+                <table id="tabela-estoque"><thead><tr><th>Insumo</th><th>Medida</th><th>Qtd</th><th>Status</th><th style="text-align:center;">Movimentação Rápida</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <div id="portal" class="section">
+            <div class="portal-paciente">
+                <h2 style="text-align: center; color: var(--primary);">Agende sua Consulta</h2>
+                <form id="form-paciente" onsubmit="finalizarAgendamento(event)">
+                    
+                    <div class="form-group">
+                        <label>1. Especialidade / Tipo</label>
+                        <select id="pac-tipo" required><option value="">Selecione...</option><option value="Consulta Geral">Consulta Geral</option><option value="Retorno">Retorno</option></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>2. Escolha o Dia</label>
+                        <input type="date" id="pac-data" required onchange="buscarHorarios()">
+                    </div>
+                    
+                    <div class="form-group" id="container-horarios" style="display: none;">
+                        <label>3. Horários Disponíveis</label>
+                        <div class="grid-horarios" id="grid-horarios"></div>
+                        <input type="hidden" id="pac-hora-selecionada" required>
+                    </div>
+                    
+                    <div id="container-dados" style="display: none; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                        <div class="form-group"><label>Nome Completo</label><input type="text" id="pac-nome" required></div>
+                        <div class="form-grid" style="padding: 0; box-shadow: none; margin-bottom: 0;">
+                            <div class="form-group"><label>Data de Nascimento</label><input type="date" id="pac-nasc" required></div>
+                            <div class="form-group"><label>WhatsApp</label><input type="tel" id="pac-tel" placeholder="Ex: 11999999999" required></div>
+                        </div>
+                        <div class="form-group"><label>Convênio / Plano</label><select id="pac-convenio"><option value="Particular">Particular</option><option value="Unimed">Unimed</option><option value="Amil">Amil</option></select></div>
+                        <div class="form-group"><label>Motivo da Consulta (Opcional)</label><textarea id="pac-motivo" rows="2" placeholder="Descreva brevemente o que está sentindo..."></textarea></div>
+                        
+                        <button type="submit" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 16px;">Confirmar Agendamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="modal-atendimento">
+        <div class="modal-box" style="max-width: 800px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div>
+                    <h2 style="color: var(--primary); margin-bottom: 5px;">Ficha Clínica Médica</h2>
+                    <h3 id="atend-nome" style="color: var(--text-dark); margin-bottom: 0;">Nome do Paciente</h3>
+                    <span style="font-size: 13px; color: #64748b;" id="atend-idade-conv">Idade | Convênio</span>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
+                <p style="font-size: 14px; margin-bottom: 10px;"><strong>Motivo do Agendamento:</strong> <span id="atend-motivo" style="color: #475569;"></span></p>
+                <div id="atend-alerta-box" class="alerta-clinico" style="display: none;"></div>
+            </div>
+            
+            <div class="form-group full">
+                <label>Evolução Clínica / Anamnese / Prescrição</label>
+                <textarea id="atend-evolucao" rows="6" placeholder="Digite os detalhes da consulta e a conduta tomada..."></textarea>
+            </div>
+            
+            <div class="form-grid" style="background: #f1f5f9; padding: 15px; box-shadow: none; margin-bottom: 0;">
+                <div class="form-group"><label>Retorno Agendado (Dias)</label><input type="number" id="atend-retorno" placeholder="Ex: 30"></div>
+                <div class="form-group"><label>Valor a Cobrar (R$)</label><input type="number" id="atend-valor" placeholder="0.00"></div>
+                <div class="form-group"><label>Forma de Pagamento</label><select id="atend-forma"><option value="Cortesia/Retorno">Não Cobrar (Retorno/Convênio)</option><option value="Pix">Pix</option><option value="Cartão">Cartão</option><option value="Dinheiro">Dinheiro</option></select></div>
+            </div>
+            
+            <input type="hidden" id="atend-id-agendamento">
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button style="flex: 1;" onclick="salvarAtendimento()">✔ Finalizar e Salvar Prontuário</button>
+                <button class="btn-danger" style="flex: 1;" onclick="fecharModal('modal-atendimento')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-editar-paciente">
+        <div class="modal-box">
+            <h2>Completar Cadastro / Triagem</h2>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">Preencha os dados burocráticos e clínicos de segurança antes da consulta.</p>
+            
+            <div class="form-grid" style="box-shadow: none; padding: 0; gap: 10px;">
+                <div class="form-group"><label>CPF</label><input type="text" id="cad-cpf" placeholder="000.000.000-00"></div>
+                <div class="form-group"><label>Carteirinha Convênio</label><input type="text" id="cad-carteirinha"></div>
+                <div class="form-group full"><label>Endereço Completo</label><input type="text" id="cad-endereco"></div>
+                
+                <div class="form-group full" style="margin-top: 10px;"><h3 style="font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Avisos Clínicos Importantes</h3></div>
+                
+                <div class="form-group full"><label style="color: var(--danger);">Alergias Medicamentosas / Graves</label><input type="text" id="cad-alergias" placeholder="Ex: Penicilina, Dipirona, Iodo"></div>
+                <div class="form-group"><label>Comorbidades (Doenças Crônicas)</label><input type="text" id="cad-comorbidades" placeholder="Ex: Hipertensão, Diabetes"></div>
+                <div class="form-group"><label>Medicamentos de Uso Contínuo</label><input type="text" id="cad-uso-continuo" placeholder="Ex: Losartana 50mg"></div>
+                <div class="form-group full"><label>Histórico Familiar Relevante</label><input type="text" id="cad-hist-familiar" placeholder="Ex: Pai infartou aos 45 anos"></div>
+            </div>
+
+            <input type="hidden" id="cad-id-paciente">
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button style="flex: 1;" onclick="salvarEdicaoPaciente()">💾 Salvar Dados Completos</button>
+                <button class="btn-outline" style="flex: 1;" onclick="fecharModal('modal-editar-paciente')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-historico">
+        <div class="modal-box">
+            <h2>Histórico Médico</h2>
+            <h3 id="hist-nome" style="color: var(--primary); margin-bottom: 20px;">Nome</h3>
+            <div id="hist-conteudo" style="display: flex; flex-direction: column; gap: 15px;"></div>
+            <button style="width: 100%; margin-top: 20px;" onclick="fecharModal('modal-historico')">Fechar Aba</button>
+        </div>
+    </div>
+
+    <script>
+        // Bancos de Dados LocalStorage
+        let dbAgenda = JSON.parse(localStorage.getItem('pdv_v4_agenda')) || [];
+        let dbFinanceiro = JSON.parse(localStorage.getItem('pdv_v4_financeiro')) || [];
+        let dbEstoque = JSON.parse(localStorage.getItem('pdv_v4_estoque')) || [];
+        let dbPacientes = JSON.parse(localStorage.getItem('pdv_v4_pacientes')) || []; 
+        
+        let calendario, chartFin, chartAge;
+        const horariosPadrao = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00"];
+
+        // Utilitários
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+        function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+        function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+        
+        function calcularIdade(dataNasc) {
+            if(!dataNasc) return '?';
+            const diff = Date.now() - new Date(dataNasc).getTime();
+            return Math.abs(new Date(diff).getUTCFullYear() - 1970);
+        }
+
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            if(element) element.classList.add('active');
+            if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+            if(sectionId === 'agenda' && calendario) { setTimeout(() => { calendario.render(); window.dispatchEvent(new Event('resize')); }, 100); }
+            if(sectionId === 'dashboard') atualizarDashboards();
+        }
+
+        // WhatsApp Integração
+        function enviarWhatsApp(tel, nome, data, hora) {
+            let num = tel.replace(/\D/g, ''); if(num.length === 11) num = "55" + num;
+            const msg = `Olá ${nome}, tudo bem? Somos do consultório médico. Confirmando sua consulta no dia ${data.split('-').reverse().join('/')} às ${hora}. Podemos confirmar?`;
+            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // --- AGENDA E BLOQUEIOS ---
+        function bloquearPeriodo() {
+            const dt = document.getElementById('bloq-data').value;
+            const hrIni = document.getElementById('bloq-hora-ini').value;
+            const hrFim = document.getElementById('bloq-hora-fim').value;
+            if(!dt || !hrIni || !hrFim) return alert("Preencha todos os campos do bloqueio.");
+
+            let total = 0;
+            horariosPadrao.forEach(slot => {
+                if(slot >= hrIni && slot < hrFim && !dbAgenda.find(i => i.data === dt && i.hora === slot && i.status === 'Bloqueado')) {
+                    dbAgenda.push({ id: Date.now() + Math.random(), nome: "BLOQUEADO", data: dt, hora: slot, status: 'Bloqueado' });
+                    total++;
+                }
+            });
+            localStorage.setItem('pdv_v4_agenda', JSON.stringify(dbAgenda)); alert(`${total} horários bloqueados!`); atualizarInterface();
+        }
+        function desbloquearHorario(id) { dbAgenda = dbAgenda.filter(i => i.id !== id); localStorage.setItem('pdv_v4_agenda', JSON.stringify(dbAgenda)); atualizarInterface(); }
+
+        // --- PORTAL PACIENTE (AGENDAMENTO) ---
+        function buscarHorarios() {
+            const dataEscolhida = document.getElementById('pac-data').value;
+            const grid = document.getElementById('grid-horarios');
+            if(!dataEscolhida) return;
+
+            const ocupados = dbAgenda.filter(i => i.data === dataEscolhida).map(i => i.hora);
+            const livres = horariosPadrao.filter(hora => !ocupados.includes(hora));
+
+            grid.innerHTML = ''; document.getElementById('pac-hora-selecionada').value = '';
+
+            if(livres.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1; color:var(--danger); text-align:center;">Agenda lotada neste dia.</div>`;
+                document.getElementById('container-dados').style.display = 'none';
+            } else {
+                livres.forEach(hora => {
+                    let btn = document.createElement('div'); btn.className = 'btn-horario'; btn.innerText = hora;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selecionado'));
+                        btn.classList.add('selecionado'); document.getElementById('pac-hora-selecionada').value = hora;
+                        document.getElementById('container-dados').style.display = 'block';
+                    };
+                    grid.appendChild(btn);
+                });
+            }
+            document.getElementById('container-horarios').style.display = 'block';
+        }
+
+        function finalizarAgendamento(e) {
+            e.preventDefault();
+            const hora = document.getElementById('pac-hora-selecionada').value;
+            const tel = document.getElementById('pac-tel').value;
+            const nome = document.getElementById('pac-nome').value;
+            const nasc = document.getElementById('pac-nasc').value;
+            const conv = document.getElementById('pac-convenio').value;
+            const motivo = document.getElementById('pac-motivo').value;
+
+            if(!hora) return alert("Selecione um horário.");
+
+            // Cria ou Atualiza Paciente no CRM
+            let paciente = dbPacientes.find(p => p.tel === tel);
+            if(!paciente) {
+                paciente = { id: Date.now(), nome, tel, nascimento: nasc, convenio: conv, cpf: '', endereco: '', carteirinha: '', alergias: '', comorbidades: '', usoContinuo: '', histFamiliar: '', historico: [] };
+                dbPacientes.push(paciente);
+            } else {
+                paciente.nome = nome; paciente.nascimento = nasc; paciente.convenio = conv; // Atualiza dados básicos
+            }
+            localStorage.setItem('pdv_v4_pacientes', JSON.stringify(dbPacientes));
+
+            // Salva na Agenda com o Motivo
+            dbAgenda.push({
+                id: Date.now(), pacienteId: paciente.id, tipo: document.getElementById('pac-tipo').value,
+                data: document.getElementById('pac-data').value, hora, nome, tel, motivo, status: 'Pendente'
+            });
+            localStorage.setItem('pdv_v4_agenda', JSON.stringify(dbAgenda));
+            
+            alert('Agendado com Sucesso!');
+            document.getElementById('form-paciente').reset();
+            document.getElementById('container-horarios').style.display = 'none'; document.getElementById('container-dados').style.display = 'none';
+            atualizarInterface();
+        }
+
+        // --- CRM: COMPLETAR CADASTRO (SECRETÁRIA) ---
+        function abrirEdicaoPaciente(idPac) {
+            const pac = dbPacientes.find(p => p.id == idPac);
+            document.getElementById('cad-id-paciente').value = pac.id;
+            document.getElementById('cad-cpf').value = pac.cpf || '';
+            document.getElementById('cad-carteirinha').value = pac.carteirinha || '';
+            document.getElementById('cad-endereco').value = pac.endereco || '';
+            document.getElementById('cad-alergias').value = pac.alergias || '';
+            document.getElementById('cad-comorbidades').value = pac.comorbidades || '';
+            document.getElementById('cad-uso-continuo').value = pac.usoContinuo || '';
+            document.getElementById('cad-hist-familiar').value = pac.histFamiliar || '';
+            abrirModal('modal-editar-paciente');
+        }
+
+        function salvarEdicaoPaciente() {
+            const id = document.getElementById('cad-id-paciente').value;
+            let pac = dbPacientes.find(p => p.id == id);
+            
+            pac.cpf = document.getElementById('cad-cpf').value;
+            pac.carteirinha = document.getElementById('cad-carteirinha').value;
+            pac.endereco = document.getElementById('cad-endereco').value;
+            pac.alergias = document.getElementById('cad-alergias').value;
+            pac.comorbidades = document.getElementById('cad-comorbidades').value;
+            pac.usoContinuo = document.getElementById('cad-uso-continuo').value;
+            pac.histFamiliar = document.getElementById('cad-hist-familiar').value;
+            
+            localStorage.setItem('pdv_v4_pacientes', JSON.stringify(dbPacientes));
+            fecharModal('modal-editar-paciente');
+            alert("Cadastro clínico do paciente atualizado com sucesso!");
+            atualizarInterface();
+        }
+
+        function abrirHistorico(idPac) {
+            const pac = dbPacientes.find(p => p.id == idPac);
+            document.getElementById('hist-nome').innerText = pac.nome;
+            const conteudo = document.getElementById('hist-conteudo');
+            if(pac.historico.length === 0) conteudo.innerHTML = '<p>Nenhum atendimento registrado.</p>';
+            else conteudo.innerHTML = pac.historico.slice().reverse().map(h => `
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <strong>${h.data.split('-').reverse().join('/')} às ${h.hora}</strong> (${h.tipo})<br>
+                    <p style="margin-top: 5px; color: #475569; font-size: 14px; white-space: pre-wrap;">${h.evolucao || 'Sem anotações.'}</p>
+                </div>
+            `).join('');
+            abrirModal('modal-historico');
+        }
+
+        // --- FICHA CLÍNICA (ATENDIMENTO MÉDICO) ---
+        function iniciarAtendimento(idAgendamento) {
+            const ag = dbAgenda.find(i => i.id == idAgendamento);
+            const pac = dbPacientes.find(p => p.id == ag.pacienteId);
+            
+            document.getElementById('atend-id-agendamento').value = idAgendamento;
+            document.getElementById('atend-nome').innerText = ag.nome;
+            
+            const idade = pac ? calcularIdade(pac.nascimento) : '?';
+            const convenio = pac ? pac.convenio : 'Particular';
+            document.getElementById('atend-idade-conv').innerText = `${idade} anos | Convênio: ${convenio}`;
+            document.getElementById('atend-motivo').innerText = ag.motivo || 'Nenhum motivo informado pelo paciente.';
+
+            // Alertas Médicos
+            const alertaBox = document.getElementById('atend-alerta-box');
+            let avisos = [];
+            if(pac && pac.alergias) avisos.push(`🛑 ALERGIAS: ${pac.alergias}`);
+            if(pac && pac.comorbidades) avisos.push(`⚠️ COMORBIDADES: ${pac.comorbidades}`);
+            if(pac && pac.usoContinuo) avisos.push(`💊 USO CONTÍNUO: ${pac.usoContinuo}`);
+            
+            if(avisos.length > 0) {
+                alertaBox.innerHTML = avisos.join('<br>');
+                alertaBox.style.display = 'block';
+            } else {
+                alertaBox.style.display = 'none';
+            }
+
+            document.getElementById('atend-evolucao').value = '';
+            document.getElementById('atend-retorno').value = '';
+            document.getElementById('atend-valor').value = '';
+            document.getElementById('atend-forma').value = 'Cortesia/Retorno';
+            
+            abrirModal('modal-atendimento');
+        }
+
+        function salvarAtendimento() {
+            const idAg = document.getElementById('atend-id-agendamento').value;
+            const evolucao = document.getElementById('atend-evolucao').value;
+            const retornoDias = parseInt(document.getElementById('atend-retorno').value);
+            const valor = parseFloat(document.getElementById('atend-valor').value);
+            const forma = document.getElementById('atend-forma').value;
+
+            let ag = dbAgenda.find(i => i.id == idAg);
+            ag.status = 'Concluído';
+            localStorage.setItem('pdv_v4_agenda', JSON.stringify(dbAgenda));
+
+            // Salva no CRM
+            let pac = dbPacientes.find(p => p.id == ag.pacienteId);
+            if(pac) {
+                pac.ultimaVisita = new Date().toLocaleDateString('pt-BR');
+                if(!isNaN(retornoDias)) {
+                    let d = new Date(); d.setDate(d.getDate() + retornoDias);
+                    pac.dataRetorno = d.toISOString().split('T')[0];
+                } else { pac.dataRetorno = null; }
+                
+                pac.historico.push({ data: ag.data, hora: ag.hora, tipo: ag.tipo, evolucao: evolucao });
+                localStorage.setItem('pdv_v4_pacientes', JSON.stringify(dbPacientes));
+            }
+
+            // Lança Caixa
+            if(!isNaN(valor) && valor > 0 && forma !== 'Cortesia/Retorno') {
+                dbFinanceiro.push({ id: Date.now(), dataIso: new Date().toISOString(), data: new Date().toLocaleDateString('pt-BR'), tipo: 'Entrada', forma: forma, desc: `${ag.tipo}: ${ag.nome}`, valor: valor });
+                localStorage.setItem('pdv_v4_financeiro', JSON.stringify(dbFinanceiro));
+            }
+
+            fecharModal('modal-atendimento'); alert("Prontuário salvo!"); atualizarInterface();
+        }
+
+        // --- CAIXA E ESTOQUE ---
+        function registrarCaixa() {
+            const t = document.getElementById('fin-tipo').value; const f = document.getElementById('fin-forma').value;
+            const d = document.getElementById('fin-desc').value; const v = parseFloat(document.getElementById('fin-valor').value);
+            if(d && !isNaN(v)) {
+                dbFinanceiro.push({ id: Date.now(), dataIso: new Date().toISOString(), data: new Date().toLocaleDateString('pt-BR'), tipo: t, forma: f, desc: d, valor: v });
+                localStorage.setItem('pdv_v4_financeiro', JSON.stringify(dbFinanceiro));
+                document.getElementById('fin-desc').value = ''; document.getElementById('fin-valor').value = '';
+                atualizarInterface(); alert('Caixa atualizado!');
+            }
+        }
+        function estornarLancamento(id) { if(confirm("Apagar lançamento?")) { dbFinanceiro = dbFinanceiro.filter(f => f.id !== id); localStorage.setItem('pdv_v4_financeiro', JSON.stringify(dbFinanceiro)); atualizarInterface(); } }
+
+        function adicionarNovoEstoque() {
+            const n = document.getElementById('est-nome').value; const m = document.getElementById('est-medida').value;
+            const q = parseInt(document.getElementById('est-qtd').value); const min = parseInt(document.getElementById('est-min').value) || 0;
+            if(!n || isNaN(q)) return;
+            dbEstoque.push({ id: Date.now(), nome: n, medida: m, qtd: q, min: min }); localStorage.setItem('pdv_v4_estoque', JSON.stringify(dbEstoque));
+            document.getElementById('est-nome').value = ''; document.getElementById('est-qtd').value = ''; atualizarInterface();
+        }
+        function movimentarEstoque(id, tipo) {
+            let i = dbEstoque.find(x => x.id == id);
+            if(tipo === 'in') { let q = parseInt(prompt(`Qtd Entrada:`)); if(q>0) i.qtd += q; } 
+            else if(tipo === 'out') { let q = parseInt(prompt(`Qtd Consumo:`)); if(q>0 && i.qtd>=q) i.qtd -= q; else alert("Estoque insuficiente."); }
+            localStorage.setItem('pdv_v4_estoque', JSON.stringify(dbEstoque)); atualizarInterface();
+        }
+
+        // --- RENDERIZAÇÃO GERAL ---
+        function atualizarInterface() {
+            const hjStr = new Date().toISOString().split('T')[0];
+            
+            // Fila Hoje com o Motivo visível
+            const pendentes = dbAgenda.filter(a => a.status === 'Pendente' && a.data === hjStr).sort((a,b) => a.hora.localeCompare(b.hora));
+            document.getElementById('lista-fila').innerHTML = pendentes.length ? pendentes.map(i => `
+                <div style="border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; background: #f8fafc; border-left: 4px solid var(--primary); margin-bottom: 10px;">
+                    <strong>${i.hora} - ${i.nome}</strong><br>
+                    <span style="font-size:12px;color:#64748b;">${i.tipo} | 📞 ${i.tel}</span><br>
+                    <span style="font-size:12px;color:#dc2626;font-weight:bold;">Queixa: ${i.motivo || 'Não informada'}</span>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button class="btn-success btn-small" style="flex:1;" onclick="iniciarAtendimento(${i.id})">✔ Atender</button>
+                        <button class="btn-whatsapp btn-small" style="flex:1; border:none; color:white; font-weight:bold; border-radius:6px; cursor:pointer;" onclick="enviarWhatsApp('${i.tel}', '${i.nome}', '${i.data}', '${i.hora}')">💬 Avisar</button>
+                    </div>
+                </div>
+            `).join('') : '<p style="font-size: 14px; color: #64748b;">Nenhum paciente na fila hoje.</p>';
+
+            // CRM - Pacientes e Edição
+            document.querySelector('#tabela-pacientes tbody').innerHTML = dbPacientes.map(p => {
+                let ret = p.dataRetorno ? p.dataRetorno.split('-').reverse().join('/') : '-';
+                if(p.dataRetorno && p.dataRetorno <= hjStr) ret = `<span style="color:var(--danger); font-weight:bold;">${ret} (Ligar!)</span>`;
+                return `<tr><td><strong>${p.nome}</strong></td><td>${p.tel}</td><td>${p.ultimaVisita || '-'}</td><td>${ret}</td><td>
+                    <button class="btn-outline btn-small" onclick="abrirEdicaoPaciente(${p.id})">📝 Ficha</button>
+                    <button class="btn-primary btn-small" onclick="abrirHistorico(${p.id})">Prontuário</button>
+                </td></tr>`;
+            }).join('');
+
+            // Restante (Bloqueios, Fin e Estoque)
+            const bloqueios = dbAgenda.filter(a => a.status === 'Bloqueado' && a.data >= hjStr).sort((a,b) => a.data.localeCompare(b.data));
+            document.getElementById('lista-bloqueios').innerHTML = bloqueios.length ? bloqueios.map(i => `<div style="border: 1px solid #fca5a5; padding: 10px; border-radius: 8px; background: #fef2f2; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.data.split('-').reverse().join('/')} às ${i.hora}</strong></div><button class="btn-outline btn-small" style="color:var(--danger); border-color:var(--danger);" onclick="desbloquearHorario(${i.id})">✖</button></div>`).join('') : '<p style="font-size: 14px; color: #64748b;">Nenhum bloqueio futuro.</p>';
+
+            document.querySelector('#tabela-financeiro tbody').innerHTML = dbFinanceiro.slice().reverse().map(f => `<tr><td>${f.data}</td><td><span class="badge ${f.tipo==='Entrada'?'bg-success':'bg-danger'}">${f.tipo}</span></td><td>${f.desc}</td><td style="font-size:12px;">${f.forma}</td><td style="color:${f.tipo==='Entrada'?'var(--success)':'var(--danger)'}; font-weight:bold;">R$ ${f.valor.toFixed(2)}</td><td><button class="btn-danger btn-small" onclick="estornarLancamento(${f.id})">🗑️</button></td></tr>`).join('');
+            document.querySelector('#tabela-estoque tbody').innerHTML = dbEstoque.map(i => { let status = i.qtd === 0 ? '<span class="badge bg-danger">Zerado</span>' : (i.qtd <= i.min ? '<span class="badge bg-warning">Baixo</span>' : '<span class="badge bg-success">OK</span>'); return `<tr><td><strong>${i.nome}</strong></td><td>${i.medida}</td><td>${i.qtd}</td><td>${status}</td><td style="text-align:center;"><button class="btn-success btn-small" onclick="movimentarEstoque(${i.id}, 'in')">➕</button> <button class="btn-warning btn-small" onclick="movimentarEstoque(${i.id}, 'out')">➖</button></td></tr>`;}).join('');
+
+            if(calendario) {
+                calendario.removeAllEvents();
+                calendario.addEventSource(dbAgenda.map(item => ({ id: item.id, title: item.status === 'Bloqueado' ? 'BLOQUEADO' : `${item.hora} ${item.nome}`, start: `${item.data}T${item.hora}:00`, backgroundColor: item.status === 'Concluído' ? '#16a34a' : (item.status === 'Bloqueado' ? '#475569' : '#2563eb'), borderColor: 'transparent' })));
+            }
+            atualizarDashboards(hjStr);
+        }
+
+        function atualizarDashboards(hjStr) {
+            let entHj = 0; dbFinanceiro.forEach(f => { if(f.dataIso && f.dataIso.startsWith(hjStr) && f.tipo === 'Entrada') entHj += f.valor; });
+            document.getElementById('dash-hj-entradas').innerText = `R$ ${entHj.toFixed(2)}`;
+            document.getElementById('dash-fila').innerText = dbAgenda.filter(a => a.status === 'Pendente' && a.data === hjStr).length;
+            document.getElementById('dash-estoque').innerText = dbEstoque.filter(i => i.qtd <= i.min).length;
+            document.getElementById('dash-retornos').innerText = dbPacientes.filter(p => p.dataRetorno && p.dataRetorno <= hjStr).length;
+
+            if(chartFin && chartAge) {
+                let entMes = 0, saiMes = 0; dbFinanceiro.forEach(f => { f.tipo === 'Entrada' ? entMes += f.valor : saiMes += f.valor; });
+                chartFin.data.datasets[0].data = [entMes, saiMes]; chartFin.update();
+                let p = dbAgenda.filter(a=>a.status==='Pendente' && a.data === hjStr).length;
+                let c = dbAgenda.filter(a=>a.status==='Concluído' && a.data === hjStr).length;
+                let b = dbAgenda.filter(a=>a.status==='Bloqueado' && a.data === hjStr).length;
+                chartAge.data.datasets[0].data = [p, c, b]; chartAge.update();
+            }
+        }
+
+        window.onload = () => {
+            calendario = new FullCalendar.Calendar(document.getElementById('calendar'), { initialView: 'timeGridWeek', locale: 'pt-br', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }, slotMinTime: '07:00:00', slotMaxTime: '19:00:00', height: 'auto', contentHeight: 'auto', allDaySlot: false, slotDuration: '00:30:00' });
+            calendario.render();
+            chartFin = new Chart(document.getElementById('graficoFinanceiro').getContext('2d'), { type: 'bar', data: { labels: ['Entradas Mês', 'Saídas Mês'], datasets: [{ label: 'Valor (R$)', data: [0, 0], backgroundColor: ['#16a34a', '#dc2626'] }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+            chartAge = new Chart(document.getElementById('graficoAgenda').getContext('2d'), { type: 'doughnut', data: { labels: ['Pendentes', 'Concluídos', 'Bloqueios'], datasets: [{ data: [0,0,0], backgroundColor: ['#2563eb', '#16a34a', '#475569'] }] }, options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } } });
+            atualizarInterface();
+        };
+    </script>
+</body>
+</html>
